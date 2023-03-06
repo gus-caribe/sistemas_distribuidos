@@ -23,15 +23,21 @@ public class Servidor extends Thread {
             while(true){
                 //definir a mensagem
                 byte[] msg = new byte[256];
+                byte[] answer = new byte[]{00, 00, 00, 01};
                 
                 //criar o pacote
                 DatagramPacket pct = new DatagramPacket(
                     msg,
                     msg.length
                 );
+                DatagramPacket ans = new DatagramPacket(
+                    answer,
+                    answer.length
+                );
                 
                 //receber o pacote
                 s.receive(pct);
+                new DatagramSocket().send(ans);
                 
                 //desempacotar
                 String dados = new String(pct.getData()).trim();
