@@ -1,56 +1,67 @@
 
 package udp;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
+import java.net.SocketTimeoutException;
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 
-public class Cliente extends Thread{
+public class Cliente extends Thread {
     
-    private final String HOST = "172.25.3.161";
+    private final String HOST = "192.168.56.1";
     private final int PORTA = 12345;
+    private final int PORTASERVIDOR = 12346;
+
+    public Cliente(){
+        System.out.println(
+            "Cliente iniciado na porta " + PORTA
+        );
+        //run();
+    }
     
-    public void enviar(String msg){
+    @Override
+    public void run() {
         try {
-            //converter a mensagem em bytes
-            byte[] dados = msg.getBytes();
-            //criar um novo socket
             DatagramSocket s = new DatagramSocket(PORTA);
-            //definir timeout para aresposta da mensagem
-            final Duration timeout = Duration.ofSeconds(30);
-            //guarda a hora da requisição
-            LocalDateTime horaRequisicao;
-            
+            System.out.println("escutando");
+
+            while (true) {
+                byte[] msg = new byte[256];
+
+                DatagramPacket pct = new DatagramPacket(
+                    msg,
+                    msg.length
+                );
+                s.receive(pct);
+
+                String ansString = new String(pct.getData()).trim();
+                System.out.println("DE");
+                System.out.println(pct.getAddress().getHostName());
+                System.out.println("MSG");
+                System.out.println(ansString + "\n");
+            }
+
+        } catch (IOException e) {
+            System.err.println("ERRO: " + e.getMessage());
+        }
+    }
+
+    public void enviar(String msg) {
+        try {
+            byte[] dados = msg.getBytes();
+            System.out.println("enviando na porta: " + PORTASERVIDOR);
+
             DatagramPacket pct = new DatagramPacket(
-                dados,
-                dados.length,
-                InetAddress.getByName(HOST),
-                PORTA
+                    dados,
+                    dados.length,
+                    InetAddress.getByName(HOST),
+                    PORTASERVIDOR
             );
-            DatagramPacket ans = new DatagramPacket(
-                new byte[4],
-                new byte[4].length
-            );
-            
-            horaRequisicao = LocalDateTime.now();
             new DatagramSocket().send(pct);
-            
-            while(LocalDateTime.now().compareTo(horaRequisicao.plus(timeout)) < 1) {
-                s.receive(ans);
-            }
-            
-            switch(ByteBuffer.wrap(ans.getData()).getInt()) {
-                case 0 -> System.out.println("ERRO DE TIMEOUT");
-                case 1 -> System.out.println("MENSAGEM RECEBIDA");
-                default -> System.out.println("ERRO GENÉRICO");
-            }
-            
-        } catch (Exception e) {
+        } catch (IOException e) {
             System.err.println("ERRO: " + e.getMessage());
         }
     }

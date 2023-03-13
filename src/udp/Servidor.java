@@ -1,54 +1,66 @@
 
 package udp;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketTimeoutException;
+import java.time.Duration;
 
 public class Servidor extends Thread {
     
-    private final int PORTA = 12345;
+    private final String HOST = "192.168.56.1";
+    private final int PORTA = 12346;
+    private final int PORTACLIENTE = 12345;
     
     public Servidor(){
         System.out.println(
             "Servidor iniciado na porta " + PORTA
         );
+        //run();
     }
     
     @Override
-    public void run(){
+    public void run() {
         try {
-            //criar um novo socket
             DatagramSocket s = new DatagramSocket(PORTA);
-            
-            while(true){
-                //definir a mensagem
+            System.out.println("escutando");
+
+            while (true) {
                 byte[] msg = new byte[256];
-                byte[] answer = new byte[]{00, 00, 00, 01};
-                
-                //criar o pacote
+
                 DatagramPacket pct = new DatagramPacket(
                     msg,
                     msg.length
                 );
-                DatagramPacket ans = new DatagramPacket(
-                    answer,
-                    answer.length
-                );
-                
-                //receber o pacote
                 s.receive(pct);
-                new DatagramSocket().send(ans);
-                
-                //desempacotar
-                String dados = new String(pct.getData()).trim();
+
+                String ansString = new String(pct.getData()).trim();
                 System.out.println("DE");
-                //System.out.println(pct.getAddress().getHostAddress());
                 System.out.println(pct.getAddress().getHostName());
                 System.out.println("MSG");
-                System.out.println(dados + "\n");
+                System.out.println(ansString + "\n");
             }
-            
-        } catch (Exception e) {
+
+        } catch (IOException e) {
+            System.err.println("ERRO: " + e.getMessage());
+        }
+    }
+
+    public void enviar(String msg) {
+        try {
+            byte[] dados = msg.getBytes();
+            System.out.println("enviando na porta: " + PORTACLIENTE);
+
+            DatagramPacket pct = new DatagramPacket(
+                    dados,
+                    dados.length,
+                    InetAddress.getByName(HOST),
+                    PORTACLIENTE
+            );
+            new DatagramSocket().send(pct);
+        } catch (IOException e) {
             System.err.println("ERRO: " + e.getMessage());
         }
     }
