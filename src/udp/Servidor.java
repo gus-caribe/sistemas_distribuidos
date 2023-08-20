@@ -5,27 +5,45 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketTimeoutException;
-import java.time.Duration;
+import java.util.*;
 
 public class Servidor extends Thread {
     
     private final String HOST = "192.168.56.1";
-    private final int PORTA = 12346;
-    private final int PORTACLIENTE = 12345;
+    private final int PORTA = 12345;
+    private ArrayList<Integer> portasCliente = new ArrayList<>();
     
     public Servidor(){
-        System.out.println(
-            "Servidor iniciado na porta " + PORTA
-        );
-        //run();
+        System.out.println("Servidor iniciado na porta " + PORTA);
+    }
+    
+    public void enviar(String estadoPlacar) {
+        try {
+            byte[] dados = estadoPlacar.getBytes();
+            
+            for(Integer porta : portasCliente) {
+                DatagramPacket pct = new DatagramPacket(
+                    dados,
+                    dados.length,
+                    InetAddress.getByName(HOST),
+                    porta.intValue()
+                );
+                new DatagramSocket().send(pct);
+                
+                System.out.println("CONTEUDO:");
+                System.out.println(estadoPlacar);
+                System.out.println("ENVIADO NA PORTA:");
+                System.out.println(porta);
+            }
+        } catch (IOException e) {
+            System.err.println("ERRO: " + e.getMessage());
+        }
     }
     
     @Override
     public void run() {
         try {
             DatagramSocket s = new DatagramSocket(PORTA);
-            System.out.println("escutando");
 
             while (true) {
                 byte[] msg = new byte[256];
@@ -35,38 +53,21 @@ public class Servidor extends Thread {
                     msg.length
                 );
                 s.receive(pct);
+                
+                Integer ansPorta = Integer.parseInt(new String(pct.getData()).trim());
 
-                String ansString = new String(pct.getData()).trim();
-                System.out.println("DE");
-                System.out.println(pct.getAddress().getHostName());
-                System.out.println("MSG");
-                System.out.println(ansString + "\n");
+                System.out.println("RECEBIDO: " + ansPorta.intValue());
+                
+                if(portasCliente.indexOf(ansPorta) == -1 && ansPorta != null) {
+                    portasCliente.add(ansPorta);
+                    
+                    System.out.println("PORTA ADICIONADA: " + ansPorta);
+                }
             }
 
         } catch (IOException e) {
             System.err.println("ERRO: " + e.getMessage());
         }
-    }
-
-    public void enviar(String msg) {
-        try {
-            byte[] dados = msg.getBytes();
-            System.out.println("enviando na porta: " + PORTACLIENTE);
-
-            DatagramPacket pct = new DatagramPacket(
-                    dados,
-                    dados.length,
-                    InetAddress.getByName(HOST),
-                    PORTACLIENTE
-            );
-            new DatagramSocket().send(pct);
-        } catch (IOException e) {
-            System.err.println("ERRO: " + e.getMessage());
-        }
-    }
-    
-    public static void main(String[] args) {
-        new Servidor().start();
     }
     
 }
